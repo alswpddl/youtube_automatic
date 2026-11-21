@@ -1,0 +1,32 @@
+name: collect-trends
+
+on:
+  schedule:
+    - cron: "0 21 * * *"   # 매일 06:00 KST (UTC 21:00)
+  workflow_dispatch:        # 웹에서 수동 실행 버튼
+
+permissions:
+  contents: write
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 트렌드 수집
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        run: python collect_trends.py
+
+      - name: 결과 커밋
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/trends
+          git diff --cached --quiet || git commit -m "trends: $(date -u +%F)"
+          git push
